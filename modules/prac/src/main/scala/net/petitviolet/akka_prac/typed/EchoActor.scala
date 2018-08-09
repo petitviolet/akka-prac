@@ -9,10 +9,6 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util._
 
-class EchoActor {
-
-}
-
 object EchoActor {
   case class Message(value: String, from: ActorRef[Reply])
   case class Reply(value: String, from: ActorRef[Message])
