@@ -5,17 +5,17 @@ import akka.actor.typed.scaladsl.AskPattern.Askable
 import akka.actor.typed.scaladsl.Behaviors
 import akka.util.Timeout
 
-import scala.concurrent.Future
+import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration._
 import scala.util._
 
 object EchoActor {
   case class Message(value: String, from: ActorRef[Reply])
-  case class Reply(value: String, from: ActorRef[Message])
+  case class Reply(value: String)
 
-  val echo: Behavior[Message] = Behaviors.receive {
-    case (ctx, Message(message, from)) =>
-      from ! Reply(message, ctx.self)
+  val echo: Behavior[Message] = Behaviors.receiveMessage {
+    case Message(message, from) =>
+      from ! Reply(message)
       Behaviors.same
   }
 }
@@ -32,7 +32,7 @@ object EchoActorMain extends App {
     Behaviors.receiveMessage { case Start(message) =>
       val reply: Future[EchoActor.Reply] = echo ? { ref => EchoActor.Message(message, ref) }
       reply.onComplete {
-        case Success(EchoActor.Reply(value, from)) => ctx.log.info(s"reply success: {}. from: {}", value, from.path)
+        case Success(EchoActor.Reply(value)) => ctx.log.info(s"reply success: {}.", value)
         case Failure(exception) => ctx.log.error("reply fail: {}", exception.getMessage)
       }
       Behaviors.same
@@ -46,15 +46,16 @@ object EchoActorMain extends App {
   val msg = scala.io.StdIn.readLine("Input > ")
   system ! Start(msg)
 
-  val replyF: Future[EchoActor.Reply] = system.systemActorOf(EchoActor.echo, "echoActor") flatMap {
-    echoActor: ActorRef[EchoActor.Message] =>
-      val msg = scala.io.StdIn.readLine("Input > ")
-      echoActor ? { self => EchoActor.Message(msg, self) }
-  }
-  replyF onComplete {
-    case Success(EchoActor.Reply(value, from)) => system.log.info(s"reply success: {}. from: {}", value, from.path)
-    case Failure(exception) => system.log.error("reply fail: {}", exception.getMessage)
-  }
-
-  concurrent.Await.ready(replyF flatMap { _ =>system.terminate() }, 3.seconds)
+//  val replyF: Future[EchoActor.Reply] = system.systemActorOf(EchoActor.echo, "echoActor") flatMap {
+//    echoActor: ActorRef[EchoActor.Message] =>
+//      val msg = scala.io.StdIn.readLine("Input > ")
+//      echoActor ? { self => EchoActor.Message(msg, self) }
+//  }
+//  replyF onComplete {
+//    case Success(EchoActor.Reply(value, from)) => system.log.info(s"reply success: {}. from: {}", value, from.path)
+//    case Failure(exception) => system.log.error("reply fail: {}", exception.getMessage)
+//  }
+//
+//  concurrent.Await.ready(replyF flatMap { _ =>system.terminate() }, 3.seconds)
+  Await.ready(system.terminate(), 3.seconds)
 }
