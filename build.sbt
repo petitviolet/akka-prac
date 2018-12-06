@@ -4,7 +4,7 @@ val GROUP_ID = "net.petitviolet"
 
 val PROJECT_NAME = "akka-prac"
 
-val AKKA_VERSION = "2.5.14"
+val AKKA_VERSION = "2.5.18"
 
 lazy val commonDependencies = Seq(
   "com.typesafe.akka" %% "akka-actor" % AKKA_VERSION,
